@@ -9,7 +9,6 @@ import html
 import json
 import re
 
-
 def gender(x):
     return {"M": "male", "F": "female"}.get(x, "Undefined")
 
@@ -50,8 +49,11 @@ likes = usage['swipes_likes'].sum()
 passes = usage['swipes_passes'].sum()
 matches = usage['matches'].sum()
 encounters = usage['encounters'].sum()
-matchesMessaged = [match for match in data['Messages']
-                   if match['messages'] != []]
+
+messages = [message for matches in data['Messages']
+            for message in matches['messages'] if matches['messages'] != []]
+matchesMessaged = Counter([x['to'] for x in messages])
+
 
 print(
     f"Total app opens: {usage['app_opens'].sum()} with a max of {usage['app_opens'].max()} on {usage['app_opens'].idxmax():%d %B, %Y}")
@@ -78,13 +80,15 @@ print(
 print(
     f"Matches messaged: {len(matchesMessaged)} ({len(matchesMessaged)/matches:.2%})\n")
 
-print(f"Images sent: {len([matches for matches in matchesMessaged for message in matches['messages'] if message.get('type', '') == 'image'])}")
-print(f"GIFs sent: {len([matches for matches in matchesMessaged for message in matches['messages'] if message.get('type', '') == 'gif'])}")
 print(
-    f"Reactions sent: {len([matches for matches in matchesMessaged for message in matches['messages'] if message.get('type', '') == 'activity'])}")
+    f"Images sent: {len([images for images in messages if images.get('type', '') == 'image'])}")
+print(
+    f"GIFs sent: {len([gifs for gifs in messages if gifs.get('type', '') == 'gif'])}")
+print(
+    f"Reactions sent: {len([reactions for reactions in messages if reactions.get('type', '') == 'activity'])}")
 
 words = [html.unescape(message['message'])
-         for matches in matchesMessaged for message in matches['messages'] if message.get('type', '') == '']
+         for message in messages if message.get('type', '') == '']
 
 wc = WordCloud(background_color="white", width=1600, height=900,
                regexp="(?:(?<=\s)|(?<=^)|(?<=\b))(?:[-'’.%$#&\/]\b|\b[-.'%$#&\/]|[:;]+[\"^-]*[(\/)]+|[A-Za-z0-9]|\([A-Za-z0-9]+\))+(?=\s|$|\b)", collocations=False).generate(' '.join(words))
